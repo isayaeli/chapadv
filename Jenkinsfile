@@ -17,14 +17,18 @@ pipeline {
             steps {
                 sh '''
                     echo "Building and testing with Docker Compose..."
-                    
-                    # Build images
-                    docker-compose build
 
+                     # Load environment variables FIRST
                     echo "Loading environment variables..."
                     if [ -f .env ]; then
                         export $(cat .env | grep -v '^#' | xargs)
+                        echo "Environment variables loaded from .env file"
+                    else
+                        echo "No .env file found, using default environment variables"
                     fi
+                    
+                    # Build images
+                    docker-compose build
                     
                     # Run tests
                     docker-compose run --rm web python manage.py test
