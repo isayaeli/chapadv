@@ -4,6 +4,7 @@ pipeline {
     environment {
         KUBECONFIG = "${env.HOME}/.kube/config"
         COMPOSE_PROJECT_NAME = "chapadv-app-${env.BUILD_NUMBER}"
+        MINIKUBE_HOME = "/tmp/minikube-${env.BUILD_NUMBER}"
     }
     
     stages {
@@ -33,6 +34,7 @@ pipeline {
                 '''
             }
         }
+        
         
         stage('Build and Test with Compose') {
             steps {
@@ -101,12 +103,18 @@ pipeline {
     
     post {
         always {
-            // Cleanup Docker Compose resources
-            sh 'docker-compose down --remove-orphans || true'
             sh '''
-                kubectl get pods
-                echo "--- Services ---"
-                kubectl get services
+                echo "Cleaning up resources..."
+                # Clean up Docker Compose
+                docker-compose down --remove-orphans || true
+                
+                # Show Kubernetes resources
+                echo "--- Kubernetes Resources ---"
+                kubectl get pods,services,deployments
+                
+                # Optional: Delete Minikube cluster (comment out to keep for debugging)
+                # minikube delete || true
+                # rm -rf $MINIKUBE_HOME || true
             '''
         }
         success {
