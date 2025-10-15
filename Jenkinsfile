@@ -83,8 +83,5 @@ pipeline {
         failure {
             echo "❌ Pipeline failed. Check the logs above for details."
         }
-        always {
-            echo "Pipeline completed"
-        }
     }
 }
