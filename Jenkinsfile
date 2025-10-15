@@ -13,24 +13,29 @@ pipeline {
                 checkout scm
             }
         }
-
+        
         stage('Setup Minikube') {
             steps {
                 sh '''
-                    echo "Fixing Minikube configuration..."
+                    echo "Setting up Minikube in temporary directory..."
+                    echo "MINIKUBE_HOME: $MINIKUBE_HOME"
                     
-                    # Check where minikube binary is located
-                    which minikube
-                    
-                    # Set proper MINIKUBE_HOME
-                    export MINIKUBE_HOME=/home/jenkins/.minikube
+                    # Create temporary directory for Minikube
                     mkdir -p $MINIKUBE_HOME
                     
-                    # Start Minikube with explicit home directory
-                    minikube start --driver=docker --home=$MINIKUBE_HOME
+                    # Start Minikube cluster
+                    minikube start --driver=docker --force
                     
                     # Verify Minikube is running
-                    minikube status --home=$MINIKUBE_HOME
+                    echo "Minikube status:"
+                    minikube status
+                    
+                    # Set up Docker environment
+                    eval $(minikube docker-env)
+                    
+                    # Verify Docker is working
+                    echo "Docker info:"
+                    docker info | grep "Server Version"
                 '''
             }
         }
