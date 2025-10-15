@@ -21,14 +21,38 @@ pipeline {
             }
         }
         
-        stage('Build and Run with Docker Compose') {
+        // stage('Build and Run with Docker Compose') {
+        //     steps {
+        //         sh '''
+        //             echo "Stopping any existing containers..."
+        //             docker-compose down || true
+                    
+        //             echo "Building and starting containers..."
+        //             docker-compose up -d --build
+                    
+        //             echo "Waiting for app to start..."
+        //             sleep 10
+        //         '''
+        //     }
+        // }
+
+        stage('Build and Run') {
             steps {
                 sh '''
-                    echo "Stopping any existing containers..."
-                    docker-compose down || true
+                    # Check if rebuild is needed
+                    if [ -f requirements.txt ] && [ requirements.txt -nt .last_build ]; then
+                        echo "📦 Dependencies changed - rebuilding image..."
+                        docker-compose down || true
+                        docker-compose build
+                    else
+                        echo "⚡ No dependency changes - using existing image"
+                    fi
                     
-                    echo "Building and starting containers..."
-                    docker-compose up -d --build
+                    echo "🚀 Starting containers..."
+                    docker-compose up -d
+                    
+                    # Update build timestamp
+                    touch .last_build
                     
                     echo "Waiting for app to start..."
                     sleep 10
