@@ -1,0 +1,11 @@
+# Environment files
+.env*
+!*.example
+secrets/
+
+# Database
+*.sqlite3
+pgdata/
+
+# Docker
+docker-compose.override.yml
