@@ -18,15 +18,20 @@ pipeline {
                 sh '''
                     echo "Building and testing with Docker Compose..."
 
-                     # Load environment variables FIRST
-                    echo "Loading environment variables..."
-                    if [ -f .env ]; then
-                        export $(cat .env | grep -v '^#' | xargs)
-                        echo "Environment variables loaded from .env file"
-                    else
-                        echo "No .env file found, using default environment variables"
-                    fi
-                    
+                    echo "Creating .env file dynamically..."
+                        cat > .env << EOF
+                    POSTGRES_DB=chapDB
+                    POSTGRES_USER=ceelo
+                    POSTGRES_PASSWORD=ChApDB_2024!Secur3
+                    POSTGRES_HOST=db
+                    POSTGRES_PORT=5432
+                    DJANGO_SETTINGS_MODULE=config.settings.development
+                    EOF
+                        
+                        echo "Verifying .env file was created:"
+                        ls -la .env
+                        cat .env
+                                        
                     # Build images
                     docker-compose build
                     
