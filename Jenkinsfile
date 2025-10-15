@@ -1,61 +1,54 @@
 pipeline {
     agent any
     
+    environment {
+        KUBECONFIG = "${env.HOME}/.kube/config"
+        COMPOSE_PROJECT_NAME = "chapadv-app-${env.BUILD_NUMBER}"
+    }
+    
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
                 checkout scm
-                sh 'ls -la'  // Verify files are there
             }
         }
         
-        stage('Verify Required Files') {
+        stage('Build and Test with Compose') {
             steps {
                 sh '''
-                    echo "Checking for required files..."
-                    [ -f Dockerfile ] || { echo "Dockerfile missing!"; exit 1; }
-                    [ -f docker-compose.yml ] || { echo "docker-compose.yml missing!"; exit 1; }
-                    [ -f requirements.txt ] || { echo "requirements.txt missing!"; exit 1; }
-                    echo "✅ All required files present"
+                    echo "Building and testing with Docker Compose..."
+                    
+                    # Build images
+                    docker-compose build
+                    
+                    # Run tests
+                    docker-compose run --rm web python manage.py test
+                    
+                    # Run migrations in test environment
+                    docker-compose run --rm web python manage.py migrate
+                    
+                    # Load image to Minikube
+                    minikube image load chapadv-app:latest
                 '''
             }
         }
         
-        // stage('Build and Run with Docker Compose') {
-        //     steps {
-        //         sh '''
-        //             echo "Stopping any existing containers..."
-        //             docker-compose down || true
-                    
-        //             echo "Building and starting containers..."
-        //             docker-compose up -d --build
-                    
-        //             echo "Waiting for app to start..."
-        //             sleep 10
-        //         '''
-        //     }
-        // }
-
-        stage('Build and Run') {
+        stage('Deploy to K8s') {
             steps {
                 sh '''
-                    # Check if rebuild is needed
-                    if [ -f requirements.txt ] && [ requirements.txt -nt .last_build ]; then
-                        echo "📦 Dependencies changed - rebuilding image..."
-                        docker-compose down || true
-                        docker-compose build
-                    else
-                        echo "⚡ No dependency changes - using existing image"
-                    fi
-                    
-                    echo "🚀 Starting containers..."
-                    docker-compose up -d
-                    
-                    # Update build timestamp
-                    touch .last_build
-                    
-                    echo "Waiting for app to start..."
-                    sleep 10
+                    echo "Deploying to Kubernetes..."
+                    kubectl apply -k k8s/  # Apply entire k8s directory
+                    kubectl wait --for=condition=ready pod -l app=chapadv-app --timeout=300s
+                '''
+            }
+        }
+        
+        stage('K8s Migrations') {
+            steps {
+                sh '''
+                    # Run migrations in Kubernetes
+                    POD_NAME=$(kubectl get pods -l app=chapadv-app -o jsonpath="{.items[0].metadata.name}")
+                    kubectl exec $POD_NAME -- python manage.py migrate
                 '''
             }
         }
@@ -63,9 +56,9 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh '''
-                    echo "Checking if app is healthy..."
-                    curl -f http://localhost:8000/ || curl -f http://localhost:8000/admin/ || exit 1
-                    echo "✅ App is running successfully!"
+                    SERVICE_URL=$(minikube service chapadv-service --url)
+                    curl -f $SERVICE_URL/health/ || exit 1
+                    echo "✅ Health check passed!"
                 '''
             }
         }
@@ -73,13 +66,25 @@ pipeline {
     
     post {
         always {
-            echo "Pipeline completed"
+            // Cleanup Docker Compose resources
+            sh 'docker-compose down --remove-orphans || true'
+            sh '''
+                kubectl get pods
+                echo "--- Services ---"
+                kubectl get services
+            '''
         }
         success {
-            echo "🚀 Django app is running at: http://localhost:8000"
+            sh '''
+                echo "✅ Pipeline completed successfully!"
+                echo "🌐 Access your app at: $(minikube service django-service --url)"
+            '''
         }
         failure {
             echo "❌ Pipeline failed. Check the logs above for details."
+        }
+        always {
+            echo "Pipeline completed"
         }
     }
 }
