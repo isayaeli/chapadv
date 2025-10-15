@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create non-root user (security)
-RUN useradd -m -u 1000 ceelo && chown -R ceelo:ceelo /app
-USER ceelo
+RUN useradd -m -u 1000 isaya && chown -R isaya:isaya /app
+USER isaya
 
 # Default dev command: run Django dev server (not for prod!)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
