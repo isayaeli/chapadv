@@ -4,7 +4,6 @@ pipeline {
     environment {
         KUBECONFIG = "${env.HOME}/.kube/config"
         COMPOSE_PROJECT_NAME = "chapadv-app-${env.BUILD_NUMBER}"
-        MINIKUBE_HOME = "/tmp/minikube-${env.BUILD_NUMBER}"
     }
     
     stages {
@@ -13,33 +12,6 @@ pipeline {
                 checkout scm
             }
         }
-        
-        stage('Setup Minikube') {
-            steps {
-                sh '''
-                    echo "Setting up Minikube in temporary directory..."
-                    echo "MINIKUBE_HOME: $MINIKUBE_HOME"
-                    
-                    # Create temporary directory for Minikube
-                    mkdir -p $MINIKUBE_HOME
-                    
-                    # Start Minikube cluster
-                    minikube start --driver=docker --force
-                    
-                    # Verify Minikube is running
-                    echo "Minikube status:"
-                    minikube status
-                    
-                    # Set up Docker environment
-                    eval $(minikube docker-env)
-                    
-                    # Verify Docker is working
-                    echo "Docker info:"
-                    docker info | grep "Server Version"
-                '''
-            }
-        }
-        
         
         stage('Build and Test with Compose') {
             steps {
@@ -108,18 +80,12 @@ pipeline {
     
     post {
         always {
+            // Cleanup Docker Compose resources
+            sh 'docker-compose down --remove-orphans || true'
             sh '''
-                echo "Cleaning up resources..."
-                # Clean up Docker Compose
-                docker-compose down --remove-orphans || true
-                
-                # Show Kubernetes resources
-                echo "--- Kubernetes Resources ---"
-                kubectl get pods,services,deployments
-                
-                # Optional: Delete Minikube cluster (comment out to keep for debugging)
-                # minikube delete || true
-                # rm -rf $MINIKUBE_HOME || true
+                kubectl get pods
+                echo "--- Services ---"
+                kubectl get services
             '''
         }
         success {
