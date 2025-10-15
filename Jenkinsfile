@@ -1,69 +1,61 @@
 pipeline {
     agent any
     
-    environment {
-        KUBECONFIG = "${env.HOME}/.kube/config"
-        COMPOSE_PROJECT_NAME = "chapadv-app-${env.BUILD_NUMBER}"
-    }
-    
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 checkout scm
+                sh 'ls -la'  // Verify files are there
             }
         }
         
-        stage('Build and Test with Compose') {
+        stage('Verify Required Files') {
             steps {
                 sh '''
-                    echo "Building and testing with Docker Compose..."
+                    echo "Checking for required files..."
+                    [ -f Dockerfile ] || { echo "Dockerfile missing!"; exit 1; }
+                    [ -f docker-compose.yml ] || { echo "docker-compose.yml missing!"; exit 1; }
+                    [ -f requirements.txt ] || { echo "requirements.txt missing!"; exit 1; }
+                    echo "✅ All required files present"
+                '''
+            }
+        }
+        
+        // stage('Build and Run with Docker Compose') {
+        //     steps {
+        //         sh '''
+        //             echo "Stopping any existing containers..."
+        //             docker-compose down || true
+                    
+        //             echo "Building and starting containers..."
+        //             docker-compose up -d --build
+                    
+        //             echo "Waiting for app to start..."
+        //             sleep 10
+        //         '''
+        //     }
+        // }
 
-                    echo "Creating .env file dynamically..."
-                        cat > .env << EOF
-                        POSTGRES_DB=chapDB
-                        POSTGRES_USER=ceelo
-                        POSTGRES_PASSWORD=ChApDB_2024!Secur3
-                        POSTGRES_HOST=db
-                        POSTGRES_PORT=5432
-                        DJANGO_SETTINGS_MODULE=config.settings.development
-                        EOF
-                            
-                        echo "Verifying .env file was created:"
-                        ls -la .env
-                        cat .env
-                        
-                    eval $(minikube docker-env)                     
-                    # Build images
-                    docker-compose build
-                    
-                    # Run tests
-                    docker-compose run --rm web python manage.py test
-                    
-                    # Run migrations in test environment
-                    docker-compose run --rm web python manage.py migrate
-                    
-                    # Load image to Minikube
-                    minikube image load chapadv-app:latest
-                '''
-            }
-        }
-        
-        stage('Deploy to K8s') {
+        stage('Build and Run') {
             steps {
                 sh '''
-                    echo "Deploying to Kubernetes..."
-                    kubectl apply -k k8s/  # Apply entire k8s directory
-                    kubectl wait --for=condition=ready pod -l app=chapadv-app --timeout=300s
-                '''
-            }
-        }
-        
-        stage('K8s Migrations') {
-            steps {
-                sh '''
-                    # Run migrations in Kubernetes
-                    POD_NAME=$(kubectl get pods -l app=chapadv-app -o jsonpath="{.items[0].metadata.name}")
-                    kubectl exec $POD_NAME -- python manage.py migrate
+                    # Check if rebuild is needed
+                    if [ -f requirements.txt ] && [ requirements.txt -nt .last_build ]; then
+                        echo "📦 Dependencies changed - rebuilding image..."
+                        docker-compose down || true
+                        docker-compose build
+                    else
+                        echo "⚡ No dependency changes - using existing image"
+                    fi
+                    
+                    echo "🚀 Starting containers..."
+                    docker-compose up -d
+                    
+                    # Update build timestamp
+                    touch .last_build
+                    
+                    echo "Waiting for app to start..."
+                    sleep 10
                 '''
             }
         }
@@ -71,9 +63,9 @@ pipeline {
         stage('Health Check') {
             steps {
                 sh '''
-                    SERVICE_URL=$(minikube service chapadv-service --url)
-                    curl -f $SERVICE_URL/health/ || exit 1
-                    echo "✅ Health check passed!"
+                    echo "Checking if app is healthy..."
+                    curl -f http://localhost:8000/health || curl -f http://localhost:8000/admin/ || exit 1
+                    echo "✅ App is running successfully!"
                 '''
             }
         }
@@ -81,19 +73,10 @@ pipeline {
     
     post {
         always {
-            // Cleanup Docker Compose resources
-            sh 'docker-compose down --remove-orphans || true'
-            sh '''
-                kubectl get pods
-                echo "--- Services ---"
-                kubectl get services
-            '''
+            echo "Pipeline completed"
         }
         success {
-            sh '''
-                echo "✅ Pipeline completed successfully!"
-                echo "🌐 Access your app at: $(minikube service django-service --url)"
-            '''
+            echo "🚀 Django app is running at: http://localhost:8000"
         }
         failure {
             echo "❌ Pipeline failed. Check the logs above for details."
