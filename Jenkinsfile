@@ -12,6 +12,27 @@ pipeline {
                 checkout scm
             }
         }
+
+        stage('Setup Minikube') {
+            steps {
+                sh '''
+                    echo "Fixing Minikube configuration..."
+                    
+                    # Check where minikube binary is located
+                    which minikube
+                    
+                    # Set proper MINIKUBE_HOME
+                    export MINIKUBE_HOME=/home/jenkins/.minikube
+                    mkdir -p $MINIKUBE_HOME
+                    
+                    # Start Minikube with explicit home directory
+                    minikube start --driver=docker --home=$MINIKUBE_HOME
+                    
+                    # Verify Minikube is running
+                    minikube status --home=$MINIKUBE_HOME
+                '''
+            }
+        }
         
         stage('Build and Test with Compose') {
             steps {
@@ -31,9 +52,6 @@ pipeline {
                         echo "Verifying .env file was created:"
                         ls -la .env
                         cat .env
-
-                    echo "Building images using Minikube's Docker daemon..."
-                    eval $(minikube docker-env)
                                         
                     # Build images
                     docker-compose build
