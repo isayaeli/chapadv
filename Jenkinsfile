@@ -31,7 +31,8 @@ pipeline {
                         echo "Verifying .env file was created:"
                         ls -la .env
                         cat .env
-                                        
+                        
+                    eval $(minikube docker-env)                     
                     # Build images
                     docker-compose build
                     
