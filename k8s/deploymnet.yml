@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chapadv
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chapadv
+  template:
+    metadata:
+      labels:
+        app: chapadv
+    spec:
+      containers:
+      - name: chapadv
+        image: chapadv:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DJANGO_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: chapadv-config
+              key: DJANGO_ENV
+        - name: DJANGO_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: chapadv-config
+              key: DJANGO_DEBUG
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: chapadv-config
+              key: ALLOWED_HOSTS
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "chapDB"
+        - name: POSTGRES_USER
+          value: "ceelo"
+        - name: POSTGRES_PASSWORD
+          value: "ChApDB_2024!Secur3"
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc

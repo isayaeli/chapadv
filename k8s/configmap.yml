@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chapadv-config
+data:
+  DJANGO_ENV: "development"
+  DJANGO_DEBUG: "True"
+  ALLOWED_HOSTS: "*"
