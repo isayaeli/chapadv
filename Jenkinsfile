@@ -20,17 +20,20 @@ pipeline {
 
                     echo "Creating .env file dynamically..."
                         cat > .env << EOF
-                    POSTGRES_DB=chapDB
-                    POSTGRES_USER=ceelo
-                    POSTGRES_PASSWORD=ChApDB_2024!Secur3
-                    POSTGRES_HOST=db
-                    POSTGRES_PORT=5432
-                    DJANGO_SETTINGS_MODULE=config.settings.development
-                    EOF
-                        
+                        POSTGRES_DB=chapDB
+                        POSTGRES_USER=ceelo
+                        POSTGRES_PASSWORD=ChApDB_2024!Secur3
+                        POSTGRES_HOST=db
+                        POSTGRES_PORT=5432
+                        DJANGO_SETTINGS_MODULE=config.settings.development
+                        EOF
+                            
                         echo "Verifying .env file was created:"
                         ls -la .env
                         cat .env
+
+                    echo "Building images using Minikube's Docker daemon..."
+                    eval $(minikube docker-env)
                                         
                     # Build images
                     docker-compose build
