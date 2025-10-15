@@ -9,3 +9,7 @@ pgdata/
 
 # Docker
 docker-compose.override.yml
+.vscode/
+.idea/
+__pycache__/
+*.pyc
