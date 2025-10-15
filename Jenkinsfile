@@ -20,6 +20,11 @@ pipeline {
                     
                     # Build images
                     docker-compose build
+
+                    echo "Loading environment variables..."
+                    if [ -f .env ]; then
+                        export $(cat .env | grep -v '^#' | xargs)
+                    fi
                     
                     # Run tests
                     docker-compose run --rm web python manage.py test
