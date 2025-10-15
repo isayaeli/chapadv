@@ -64,7 +64,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Checking if app is healthy..."
-                    curl -f http://localhost:8000/ || curl -f http://localhost:8000/admin/ || exit 1
+                    curl -f http://localhost:8000/health || curl -f http://localhost:8000/admin/ || exit 1
                     echo "✅ App is running successfully!"
                 '''
             }
