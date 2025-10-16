@@ -25,11 +25,16 @@ pipeline {
         stage('Build and Run') {
             steps {
 
-                withCredentials([
-                    usernamePassword(credentialsId: 'postgres-db-credentials',  // Only reference
-                                   usernameVariable: 'POSTGRES_USER', 
-                                   passwordVariable: 'POSTGRES_PASSWORD'),
-                    string(credentialsId: 'postgres-db-name', variable: 'POSTGRES_DB')  // Only reference
+                 withCredentials([
+                    usernamePassword(
+                        credentialsId: 'postgres-db-credentials', 
+                        usernameVariable: 'POSTGRES_USER', 
+                        passwordVariable: 'POSTGRES_PASSWORD'
+                    ),
+                    string(
+                        credentialsId: 'postgres-db-name', 
+                        variable: 'POSTGRES_DB'
+                    )
                 ])
 
                 sh '''
