@@ -41,9 +41,7 @@ pipeline {
 
                 sh '''
                     
-                    # So you need to set the others manually:
-                    export POSTGRES_HOST="db"
-                    export POSTGRES_PORT="5432"
+                    echo "Building and starting Docker containers..."
 
                     # Check if rebuild is needed
                     if [ -f requirements.txt ] && [ requirements.txt -nt .last_build ]; then
