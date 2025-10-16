@@ -84,6 +84,10 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                     
+                    eval $(minikube docker-env)
+                    docker build -t chapadv:latest .
+
                     echo "🚀 Deploying chapadv to Kubernetes..."
                     kubectl apply -k k8s/
                     echo "⏳ Waiting for chapadv deployment rollout..."
