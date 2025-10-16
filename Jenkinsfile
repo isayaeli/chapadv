@@ -56,12 +56,6 @@ pipeline {
             }
         }
 
-            stage('Deploy to Minikube') {
-            steps {
-                withKubeConfig([credentialsId: 'kube-id', variable: 'KUBECONFIG']) {
-                    sh 'kubectl apply -k k8s/'
-                }
-            }
         }
 
 
