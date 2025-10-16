@@ -1,5 +1,9 @@
 pipeline {
     agent any
+
+    environment {
+        KUBECONFIG = credentials('Kube-id')
+    }
     
     stages {
         stage('Checkout Code') {
@@ -73,6 +77,18 @@ pipeline {
                     echo "Checking if app is healthy..."
                     curl -f http://localhost:8000/health || curl -f http://localhost:8000/admin/ || exit 1
                     echo "✅ App is running successfully!"
+                '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    echo "🚀 Deploying chapadv to Kubernetes..."
+                    kubectl apply -k k8s/
+                    echo "⏳ Waiting for chapadv deployment rollout..."
+                    kubectl rollout status deployment/chapadv
+                    echo "✅ chapadv successfully rolled out!"
                 '''
             }
         }
