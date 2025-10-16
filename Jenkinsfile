@@ -21,21 +21,7 @@ pipeline {
             }
         }
         
-        // stage('Build and Run with Docker Compose') {
-        //     steps {
-        //         sh '''
-        //             echo "Stopping any existing containers..."
-        //             docker-compose down || true
-                    
-        //             echo "Building and starting containers..."
-        //             docker-compose up -d --build
-                    
-        //             echo "Waiting for app to start..."
-        //             sleep 10
-        //         '''
-        //     }
-        // }
-
+       
         stage('Build and Run') {
             steps {
                 sh '''
@@ -69,6 +55,17 @@ pipeline {
                 '''
             }
         }
+
+            stage('Deploy to Minikube') {
+            steps {
+                withKubeConfig([credentialsId: 'kube-id']) {
+                    sh 'kubectl apply -k k8s/'
+                }
+            }
+        }
+
+
+
     }
     
     post {
