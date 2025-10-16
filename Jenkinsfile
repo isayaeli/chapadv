@@ -41,7 +41,9 @@ pipeline {
 
                 sh '''
                     
-                    echo "Building and starting Docker containers..."
+                    # Set default DB connection details:
+                    export POSTGRES_HOST="db"
+                    export POSTGRES_PORT="5432"
 
                     # Check if rebuild is needed
                     if [ -f requirements.txt ] && [ requirements.txt -nt .last_build ]; then
