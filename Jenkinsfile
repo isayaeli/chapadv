@@ -36,6 +36,8 @@ pipeline {
                         variable: 'POSTGRES_DB'
                     )
                 ])
+                
+                 {
 
                 sh '''
                     # Check if rebuild is needed
@@ -56,6 +58,7 @@ pipeline {
                     echo "Waiting for app to start..."
                     sleep 10
                 '''
+                }
             }
         }
         
