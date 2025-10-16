@@ -91,7 +91,8 @@ pipeline {
             steps {
                 echo "🚀 Deploying to Kubernetes..."
                 sh '''
-                
+                    # For Minikube (if using Jenkins agent with Minikube)
+                    eval $(minikube docker-env)
 
                     # Build Docker image for Kubernetes
                     docker build -t chapadv:latest .
