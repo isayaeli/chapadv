@@ -28,6 +28,8 @@ spec:
           value: "db"
         - name: POSTGRES_PORT
           value: "5432"
+        - name: ALLOWED_HOSTS
+          value: "*"
         - name: DJANGO_ENV
           valueFrom:
             configMapKeyRef:
