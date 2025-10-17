@@ -70,10 +70,6 @@ pipeline {
                             touch .last_build
                         else
                             echo "⚡ No changes detected - skipping push, but ensuring build is up to date"
-                            docker-compose build
-                            echo "☁️ Tagging and pushing image to Docker Hub..."
-                            docker tag chapadv:latest $DOCKER_IMAGE
-                            docker push $DOCKER_IMAGE
                         fi
 
                         echo "🚀 Starting Docker containers..."
