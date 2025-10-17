@@ -48,13 +48,14 @@ pipeline {
                             docker-compose build
 
                             echo "☁️ Tagging and pushing image to Docker Hub..."
-                            docker tag chapadv_web:latest $DOCKER_IMAGE
+                            docker tag chapadv:latest $DOCKER_IMAGE
                             docker push $DOCKER_IMAGE
 
                             # Update build timestamp
                             touch .last_build
                         else
                             echo "⚡ No changes detected - skipping build and push"
+                             docker-compose build
                         fi
                     '''
                 }
