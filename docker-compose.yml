@@ -6,6 +6,7 @@ services:
     volumes:
       - .:/app                     # live code reload
       - static_volume:/app/static  # optional: persist static collected files
+    image: ceelo/chapadv:latest
     ports:
       - "8000:8000"
     environment:

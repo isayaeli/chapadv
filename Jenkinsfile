@@ -4,6 +4,7 @@ pipeline {
     environment {
         // Kubeconfig file stored as a Jenkins "Secret file"
         KUBECONFIG = credentials('Kube-id')
+        DOCKER_IMAGE = "ceelo/chapadv:latest"
     }
     
     stages {
@@ -29,40 +30,32 @@ pipeline {
             }
         }
 
-        stage('Build and Run Docker') {
+        stage('Build & Push Docker Image') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'postgres-db-credentials', 
-                        usernameVariable: 'POSTGRES_USER', 
-                        passwordVariable: 'POSTGRES_PASSWORD'
-                    ),
-                    string(
-                        credentialsId: 'postgres-db-name', 
-                        variable: 'POSTGRES_DB'
-                    )
-                ]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
                     sh '''
-                        export POSTGRES_HOST="db"
-                        export POSTGRES_PORT="5432"
+                        echo "🐳 Logging in to Docker Hub..."
+                        echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
 
-                        # Rebuild only if requirements.txt changed
-                        if [ requirements.txt -nt .last_build ]; then
-                            echo "📦 Dependencies changed - rebuilding image..."
+                        # Rebuild only if requirements.txt or Dockerfile changed
+                        if [ requirements.txt -nt .last_build ] || [ Dockerfile -nt .last_build ]; then
+                            echo "📦 Dependencies or Dockerfile changed - rebuilding image..."
                             docker-compose down || true
                             docker-compose build
+
+                            echo "☁️ Tagging and pushing image to Docker Hub..."
+                            docker tag chapadv_web:latest $DOCKER_IMAGE
+                            docker push $DOCKER_IMAGE
+
+                            # Update build timestamp
+                            touch .last_build
                         else
-                            echo "⚡ No dependency changes - using existing image"
+                            echo "⚡ No changes detected - skipping build and push"
                         fi
-
-                        echo "🚀 Starting Docker containers..."
-                        docker-compose up -d
-
-                        # Update build timestamp
-                        touch .last_build
-
-                        echo "⏳ Waiting for app to start..."
-                        sleep 10
                     '''
                 }
             }
@@ -91,16 +84,10 @@ pipeline {
             steps {
                 echo "🚀 Deploying to Kubernetes..."
                 sh '''
-                    # For Minikube (if using Jenkins agent with Minikube)
-                    eval $(minikube docker-env)
+                    # Make sure deployment uses Docker Hub image
+                    kubectl set image deployment/chapadv chapadv=$DOCKER_IMAGE --record || kubectl apply -k k8s/
 
-                    # Build Docker image for Kubernetes
-                    docker build -t chapadv:latest .
-
-                    # Deploy with kustomize/k8s manifests
-                    kubectl apply -k k8s/
-
-                    # Wait for deployment rollout
+                    echo "⏳ Waiting for deployment rollout..."
                     kubectl rollout status deployment/chapadv
 
                     echo "✅ chapadv successfully rolled out to Kubernetes!"
