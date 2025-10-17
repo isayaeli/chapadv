@@ -30,17 +30,32 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
+        stage('Build, Tag & Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKERHUB_USER',
-                    passwordVariable: 'DOCKERHUB_PASS'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'postgres-db-credentials', 
+                        usernameVariable: 'POSTGRES_USER', 
+                        passwordVariable: 'POSTGRES_PASSWORD'
+                    ),
+                    string(
+                        credentialsId: 'postgres-db-name', 
+                        variable: 'POSTGRES_DB'
+                    ),
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_PASS'
+                    )
+                ]) {
                     sh '''
+                        export POSTGRES_HOST="db"
+                        export POSTGRES_PORT="5432"
+
                         echo "🐳 Logging in to Docker Hub..."
                         echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
 
+                        echo "📦 Building Docker image..."
                         # Rebuild only if requirements.txt or Dockerfile changed
                         if [ requirements.txt -nt .last_build ] || [ Dockerfile -nt .last_build ]; then
                             echo "📦 Dependencies or Dockerfile changed - rebuilding image..."
@@ -54,13 +69,23 @@ pipeline {
                             # Update build timestamp
                             touch .last_build
                         else
-                            echo "⚡ No changes detected - skipping build and push"
-                             docker-compose build
+                            echo "⚡ No changes detected - skipping push, but ensuring build is up to date"
+                            docker-compose build
+                            echo "☁️ Tagging and pushing image to Docker Hub..."
+                            docker tag chapadv:latest $DOCKER_IMAGE
+                            docker push $DOCKER_IMAGE
                         fi
+
+                        echo "🚀 Starting Docker containers..."
+                        docker-compose up -d
+
+                        echo "⏳ Waiting for app to start..."
+                        sleep 10
                     '''
                 }
             }
         }
+
 
         stage('Health Check') {
             steps {
