@@ -13,7 +13,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: db
+  name: db #this is the service name for Postgres and act as hostname in the DB configuration
 spec:
   selector:
     app: postgres

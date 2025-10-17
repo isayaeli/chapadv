@@ -18,6 +18,16 @@ spec:
         ports:
         - containerPort: 8000
         env:
+        - name: DB_NAME
+          value: "chapDB"
+        - name: DB_USER
+          value: "ceelo"
+        - name: DB_PASSWORD
+          value: "ChApDB_2024!Secur3"
+        - name: DB_HOST
+          value: "db"
+        - name: DB_PORT
+          value: "5432"
         - name: DJANGO_ENV
           valueFrom:
             configMapKeyRef:
