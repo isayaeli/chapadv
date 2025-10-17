@@ -32,7 +32,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: chapadv-config
-              key: DJANGO_ENV.
+              key: DJANGO_ENV
         - name: DJANGO_DEBUG
           valueFrom:
             configMapKeyRef:
