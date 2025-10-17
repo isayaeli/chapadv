@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: chapadv
-        image: chapadv:latest
+        image: ceelo/chapadv:latest
         ports:
         - containerPort: 8000
         env:
