@@ -5,4 +5,4 @@ metadata:
 data:
   DJANGO_ENV: "development"
   DJANGO_DEBUG: "True"
-  ALLOWED_HOSTS: "*"
+  ALLOWED_HOSTS: "chapadv-service,localhost,127.0.0.1"
