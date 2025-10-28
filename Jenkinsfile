@@ -30,6 +30,8 @@ pipeline {
             }
         }
 
+    
+
         stage('Build, Tag & Push Docker Image') {
             steps {
                 withCredentials([

@@ -19,11 +19,20 @@ spec:
         - containerPort: 8000
         env:
         - name: POSTGRES_DB
-          value: "chapDB"
+          valueFrom:
+          secretKeyRef:
+            name: postgres-secret
+            key: POSTGRES_DB
         - name: POSTGRES_USER
-          value: "ceelo"
+          valueFrom:
+          secretKeyRef:
+            name: postgres-secret
+            key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
-          value: "ChApDB_2024!Secur3"
+          valueFrom:
+          secretKeyRef:
+            name: postgres-secret
+            key: POSTGRES_PASSWORD
         - name: POSTGRES_HOST
           value: "db"
         - name: POSTGRES_PORT
@@ -83,11 +92,20 @@ spec:
         - containerPort: 5432
         env:
         - name: POSTGRES_DB
-          value: "chapDB"
+          valueFrom:
+          secretKeyRef:
+            name: postgres-secret
+            key: POSTGRES_DB
         - name: POSTGRES_USER
-          value: "ceelo"
+          valueFrom:
+          secretKeyRef:
+            name: postgres-secret
+            key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
-          value: "ChApDB_2024!Secur3"
+          valueFrom:
+          secretKeyRef:
+            name: postgres-secret
+            key: POSTGRES_PASSWORD
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgres-data
