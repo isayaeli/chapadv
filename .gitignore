@@ -13,3 +13,6 @@ docker-compose.override.yml
 .idea/
 __pycache__/
 *.pyc
+secret.yml
+*.secret.yaml
+k8s/secret.yml
